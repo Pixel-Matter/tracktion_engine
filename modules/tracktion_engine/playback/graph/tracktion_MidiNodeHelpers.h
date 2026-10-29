@@ -44,8 +44,11 @@ namespace MidiNodeHelpers
                 for (int i = channelNumbers.getStart(); i < channelNumbers.getEnd(); ++i)
                     sourceSequence.createControllerUpdatesForTime (i, time, controllerMessagesScratchBuffer);
 
+                // The chased state is the state at the block start, so send it there. At 0.0001 it
+                // would overwrite sequence events in the first 0.1 ms, which are newer than the chase.
+                // Notes below keep their 0.0001 offset so they still follow the controllers.
                 for (auto& m : controllerMessagesScratchBuffer)
-                    destBuffer.addMidiMessage (m, 0.0001, midiSourceID);
+                    destBuffer.addMidiMessage (m, 0.0, midiSourceID);
             }
 
             if (! clipLevel.isMute())
