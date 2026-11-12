@@ -112,6 +112,7 @@ public:
     // call in the sub-class when being created
     void rebuildObjects()
     {
+        // DBG("rebuildObjects");
         jassert (objects.isEmpty()); // must only call this method once at construction
 
         for (const auto& v : parent)
@@ -139,12 +140,15 @@ public:
     //==============================================================================
     void valueTreeChildAdded (juce::ValueTree&, juce::ValueTree& tree) override
     {
+        // DBG("ValueTreeObjectList::valueTreeChildAdded in " + tree.getType().toString());
         if (isChildTree (tree))
         {
+            // DBG("ValueTreeObjectList::valueTreeChildAdded isChildTree = true");
             auto index = parent.indexOf (tree);
             juce::ignoreUnused (index);
             jassert (index >= 0);
 
+            // DBG("ValueTreeObjectList::createNewObject calling in " + tree.getType().toString());
             if (auto* newObject = createNewObject (tree))
             {
                 {
@@ -156,6 +160,7 @@ public:
                         objects.addSorted (*this, newObject);
                 }
 
+                // DBG("ValueTreeObjectList::newObjectAdded calling in " + tree.getType().toString());
                 newObjectAdded (newObject);
             }
             else
@@ -219,6 +224,7 @@ protected:
 
     bool isChildTree (juce::ValueTree& v) const
     {
+        // DBG("isChildTree " << v.getType().toString());
         return isSuitableType (v) && v.getParent() == parent;
     }
 

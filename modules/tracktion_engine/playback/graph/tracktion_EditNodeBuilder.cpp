@@ -678,13 +678,27 @@ std::unique_ptr<tracktion::graph::Node> createNodeForMidiClip (MidiClip& clip, c
     const auto timeBase = clip.canUseProxy() ? MidiList::TimeBase::seconds
                                              : MidiList::TimeBase::beatsRaw;
 
-    const auto channels = generateMPE ? juce::Range<int> (2, 15)
-                                      : juce::Range<int>::withStartAndLength (clip.getMidiChannel().getChannelNumber(), 1);
+    // The channels to chase controllers on when playback starts mid-clip. A custom clip's sequence
+    // (EngineBehaviour::createPlaybackMidiSequence) may use more channels than the clip's own.
+    const auto getChannels = [&] (const juce::MidiMessageSequence& sequence)
+    {
+        if (generateMPE)
+            return juce::Range<int> (2, 15);
+
+        auto channels = juce::Range<int>::withStartAndLength (clip.getMidiChannel().getChannelNumber(), 1);
+
+        for (auto e : sequence)
+            if (const auto channel = e->message.getChannel(); channel > 0)
+                channels = channels.getUnionWith (juce::Range<int>::withStartAndLength (channel, 1));
+
+        return channels;
+    };
 
     if (timeBase == MidiList::TimeBase::beatsRaw)
     {
         std::vector<juce::MidiMessageSequence> sequences;
         sequences.emplace_back (clip.getSequence().exportToPlaybackMidiSequence (clip, timeBase, generateMPE));
+        const auto channels = getChannels (sequences.front());
         const auto clipBeatRange = role == ClipRole::launcher ? getLauncherContentRange (clip)
                                                               : BeatRange (clip.getStartBeat(), clip.getEndBeat());
 
@@ -716,6 +730,7 @@ std::unique_ptr<tracktion::graph::Node> createNodeForMidiClip (MidiClip& clip, c
 
     std::vector<juce::MidiMessageSequence> sequences;
     sequences.emplace_back (clip.getSequenceLooped().exportToPlaybackMidiSequence (clip, timeBase, generateMPE));
+    const auto channels = getChannels (sequences.front());
 
     return graph::makeNode<MidiNode> (std::move (sequences),
                                       timeBase,

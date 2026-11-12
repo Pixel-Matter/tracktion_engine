@@ -167,8 +167,11 @@ ClipTrack::~ClipTrack()
 
 void ClipTrack::initialise()
 {
+    // DBG("ClipTrack::initialise for track " << getName());
     initialiseClipOwner (edit, state);
+    // DBG("2 clipList size " << getClips().size());  // DBG good
     Track::initialise();
+    // DBG("3 clipList size " << getClips().size());  // DBG good
 }
 
 void ClipTrack::flushStateToValueTree()
