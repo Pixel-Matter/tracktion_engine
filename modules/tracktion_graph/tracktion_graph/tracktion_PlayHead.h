@@ -234,10 +234,10 @@ inline int64_t PlayHead::getUnloopedPosition() const
 
 inline void PlayHead::overridePosition (int64_t newPosition)
 {
-    if (looping && rollInToLoop)
-        newPosition = std::min (newPosition, timelinePlayRange.load().getEnd());
-    else if (looping)
-        newPosition = timelinePlayRange.load().clipValue (newPosition);
+    // uZX: looping wraps only what crosses the loop end; outside the loop, play on unlooped,
+    // into it from before it or on past it from after it
+    if (looping)
+        rollInToLoop = ! timelinePlayRange.load().contains (newPosition);
 
     SyncPositions newSyncPositions;
     newSyncPositions.referenceSyncPosition = referenceSampleRange.load().getStart();
@@ -345,7 +345,7 @@ inline void PlayHead::setReferenceSampleRange (juce::Range<int64_t> sampleRange)
 {
     referenceSampleRange.store (sampleRange);
 
-    if (rollInToLoop && getPosition() >= timelinePlayRange.load().getStart())
+    if (rollInToLoop && timelinePlayRange.load().contains (getPosition()))
         rollInToLoop = false;
 }
 

@@ -1378,15 +1378,8 @@ void TransportControl::performPlay()
 
         if (looping)
         {
-            const auto cursorPos = position.get();
+            // uZX: play from the cursor, wherever it is; the play head loops once it crosses the loop end
             const auto loopRange = getLoopRange();
-
-            if (cursorPos < loopRange.getStart()
-                || cursorPos > loopRange.getEnd() - 0.1s)
-            {
-                position = loopRange.getStart();
-            }
-
             transportState->startTime = loopRange.getStart();
             transportState->endTime   = loopRange.getEnd();
 
@@ -1725,16 +1718,9 @@ void TransportControl::performPositionChange()
 
     auto newPos = TimePosition::fromSeconds (static_cast<double> (state[IDs::position]));
 
-    if (isPlaying() && looping)
-    {
-        auto range = getLoopRange();
-        newPos = juce::jlimit (range.getStart(), range.getEnd(), newPos);
-    }
-    else
-    {
-        const auto minStartTime = edit.tempoSequence.toTime (-BeatPosition::fromBeats (edit.getNumCountInBeats())) - 0.5s;
-        newPos = juce::jlimit (minStartTime, Edit::getMaximumEditEnd(), newPos);
-    }
+    // uZX: a jump outside the loop while looping plays on from there, as from a play start
+    const auto minStartTime = edit.tempoSequence.toTime (-BeatPosition::fromBeats (edit.getNumCountInBeats())) - 0.5s;
+    newPos = juce::jlimit (minStartTime, Edit::getMaximumEditEnd(), newPos);
 
     if (playbackContext != nullptr)
         playHeadWrapper->setPosition (newPos);
