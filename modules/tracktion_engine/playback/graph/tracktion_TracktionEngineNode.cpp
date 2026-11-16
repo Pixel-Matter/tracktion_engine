@@ -44,6 +44,12 @@ void ProcessState::update (double newSampleRate, juce::Range<int64_t> newReferen
     const auto splitTimelineRange = referenceSampleRangeToSplitTimelineRange (playHeadState.playHead, newReferenceSampleRange);
     jassert (! splitTimelineRange.isSplit);
     timelineSampleRange = splitTimelineRange.timelineRange1;
+
+    // uZX: a drag while stopped plays, once for each move, the block that ends at the cursor: what
+    // sounds there is stated to the plugins, which hold it until the next move or the release
+    if (timelineSampleRange.isEmpty() && playHeadState.playHead.isUserDragging() && playHeadState.didPlayheadJump())
+        timelineSampleRange = juce::Range<int64_t>::withStartAndLength (timelineSampleRange.getStart() + 1 - numSamples, numSamples);
+
     jassert (timelineSampleRange.getLength() == 0
              || timelineSampleRange.getLength() == newReferenceSampleRange.getLength());
 
